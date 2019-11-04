@@ -108,14 +108,14 @@ while Running:
     while len(portals) < 5:
         PortalEntrance = (random.randint(9, 36) * 40, random.randint(7, 23) * 40)
         PortalExit = (random.randint(9, 36) * 40, random.randint(7, 23) * 40)
-        if (PortalEntrance and PortalExit != start) and (PortalEntrance and PortalExit not in end):
+        if (PortalEntrance != start and PortalExit != start) and (PortalEntrance not in end and PortalExit not in end):
             forward.append(PortalEntrance), backward.append(PortalExit)
             portals[PortalEntrance] = PortalExit
 
     obstacles = []
     for i in range(300):
         n = (random.randint(8, 37) * 40, random.randint(10, 20) * 40)
-        if (n not in portals and end) and n != start:
+        if (n not in portals and n not in end) and n != start:
             obstacles.append(n)
 
     pathfinder(20, start, end, 20, portals)
