@@ -91,43 +91,39 @@ def pathfinder(r, start_coord, end_coord_list, delay, portal_dict):  # r = alien
 pygame.init()
 pygame.mixer.init()
 w, h = pygame.display.Info().current_w, pygame.display.Info().current_h  # one method of getting display size
-ScreenWindow = pygame.display.set_mode((w, h), pygame.FULLSCREEN)
-ScreenWindow.fill((0, 0, 0))
-
-start = (random.randint(9, 36) * 40, random.randint(7, 23) * 40)
-end = []
-for i in range(3):
-    a = (random.randint(9, 36) * 40, random.randint(10, 20) * 40)
-    b = (random.randint(9, 36) * 40, random.randint(10, 20) * 40)
-    end.append(a)
-
-
-forward = []
-backward = []
-portals = {}
-for i in range(5):
-    a = (random.randint(9, 36) * 40, random.randint(7, 23) * 40)
-    b = (random.randint(9, 36) * 40, random.randint(7, 23) * 40)
-    if (a,b) != start and (a,b) not in end:
-        forward.append(a), backward.append(b)
-        portals[a] = b
-
-obstacles = []
-
-for i in range(300):
-    n = (random.randint(8, 37)*40, random.randint(10, 20)*40)
-    if n != start and n not in end and n not in portals:
-        obstacles.append(n)
 
 Running = True
-path_finder_finished = False
 while Running:
-    for event in pygame.event.get():
+
+    ScreenWindow = pygame.display.set_mode((w, h), pygame.FULLSCREEN)
+    ScreenWindow.fill((0, 0, 0))
+
+    start, end = (random.randint(9, 36) * 40, random.randint(7, 23) * 40), []
+    while len(end) < 5:
+        RandomCoord = (random.randint(9, 36) * 40, random.randint(10, 20) * 40)
+        if RandomCoord != start:
+            end.append(RandomCoord)
+
+    forward, backward, portals = [], [], {}
+    while len(portals) < 5:
+        PortalEntrance = (random.randint(9, 36) * 40, random.randint(7, 23) * 40)
+        PortalExit = (random.randint(9, 36) * 40, random.randint(7, 23) * 40)
+        if (PortalEntrance and PortalExit != start) and (PortalEntrance and PortalExit not in end):
+            forward.append(PortalEntrance), backward.append(PortalExit)
+            portals[PortalEntrance] = PortalExit
+
+    obstacles = []
+    for i in range(300):
+        n = (random.randint(8, 37) * 40, random.randint(10, 20) * 40)
+        if (n not in portals and end) and n != start:
+            obstacles.append(n)
+
+    pathfinder(20, start, end, 20, portals)
+
+    for event in pygame.event.get():  # Press a key to close the demo, it will closes when pathfinder() finishes
         if event.type == pygame.QUIT:
             Running = False
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
             Running = False
-    if not path_finder_finished:
-        pathfinder(20, start, end, 100, portals)
-
+            
 pygame.quit()
