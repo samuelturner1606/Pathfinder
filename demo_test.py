@@ -120,7 +120,7 @@ while Running:
 
     pathfinder(20, start, end, 10, portals)
 
-    for event in pygame.event.get():  # Press a key to close the demo, it will closes when pathfinder() finishes
+    for event in pygame.event.get():  # Press a key to close the demo, it closes when pathfinder() finishes
         if event.type == pygame.QUIT:
             Running = False
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
