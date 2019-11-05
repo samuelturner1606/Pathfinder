@@ -14,6 +14,9 @@ I ran my python program on Windows 10 within the Pycharm IDE. To run the program
 
 ### Controls
 The controls are very simple, use the WASD keys to move in a direction. Move your mouse and left click to draw walls onto the screen. You could alternatively use a touch screen device and draw walls that way. 
+
 ### Other notes
-The player has a lot of health in the game demo version. You can manually change this in the code just by reducing the health value under the player class  
+The player has a lot of health in the game demo version. You can manually change this in the code just by reducing the health value under the player class. You can also play around with, for example, velocity values for the player and enemy classes. 
+
+## How the pathfinder works
 ![](demo-animation.gif)
