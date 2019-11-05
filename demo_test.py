@@ -99,7 +99,7 @@ while Running:
     ScreenWindow.fill((0, 0, 0))
 
     start, end = (random.randint(9, 36) * 40, random.randint(7, 23) * 40), []
-    while len(end) < 5:
+    while len(end) < 3:
         RandomCoord = (random.randint(9, 36) * 40, random.randint(10, 20) * 40)
         if RandomCoord != start:
             end.append(RandomCoord)
@@ -118,12 +118,12 @@ while Running:
         if (n not in portals and n not in end) and n != start:
             obstacles.append(n)
 
-    pathfinder(20, start, end, 20, portals)
+    pathfinder(20, start, end, 10, portals)
 
     for event in pygame.event.get():  # Press a key to close the demo, it will closes when pathfinder() finishes
         if event.type == pygame.QUIT:
             Running = False
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
             Running = False
-            
+
 pygame.quit()
