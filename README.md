@@ -10,13 +10,13 @@
 ![](game-animation.gif)
 ## How to play
 ### Installation and running
-I ran my python program on Windows 10 within the Pycharm IDE. To run the program you will need to have python 3 installed and the pygame module. I am not sure whether it would run on Linux or MacOS. I would recommend playing the game demo version over the game submission version because it runs smoother. The submission version contains portals that can cause bugs and crashes, it also contains more visual effects when the enemy triggers the pathfinder algorithmic function which slows down computer performance. 
+I ran my python program on Windows 10 within the Pycharm IDE. To run the program you will need to have python 3 installed and the pygame module. I am not sure whether it would run on Linux or MacOS. I would recommend playing the Game_demo.py over the Game.py because it doesn't contain portals that cause bugs and crashes, it also displays less visual effects when the enemy triggers the pathfinder algorithmic function which slows down computer performance. 
 
 ### Controls
 The controls are very simple, use the WASD keys to move in a direction. Move your mouse and left click to draw walls onto the screen. You could alternatively use a touch screen device and draw walls that way. 
 
 ### Other notes
-The player has a lot of health in the game demo version. You can manually change this in the code just by reducing the health value under the player class. You can also play around with, for example, velocity values for the player and alien (enemy) classes as well as the size and visuals of the game sprite objects.  
+The player has a lot of health in the Game_demo.py. You can manually change this in the code just by reducing the health value under the player class. You can also play around with, for example, velocity values for the player and alien (enemy) classes as well as the size and visuals of the game sprite objects.  
 
 ## How the pathfinder works
 ![](demo-animation.gif)
