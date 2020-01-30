@@ -45,7 +45,7 @@ class Player(pg.sprite.Sprite):
         self.image.set_colorkey(pg.Color('black'))
         self.rect = self.image.get_rect()
         pg.draw.circle(self.image, colour, self.rect.center, radius)
-        self.rect.x, self.rect.y = ScreenW/2, ScreenH/2
+        self.rect.x, self.rect.y = int(ScreenW/2), int(ScreenH/2)
         self._layer = 2
         self.radius = radius
         self.pos = vec(self.rect.centerx, self.rect.centery)  # Not sure why I'm getting yellow warnings with vec(x, y)
@@ -107,7 +107,7 @@ class Player(pg.sprite.Sprite):
         if collision:
             self.vel = vec()  # reset's vel to 0. Coding elastic collisions is a bit out of my skill level for now
 
-        self.rect.centerx, self.rect.centery = self.pos.x, self.pos.y  # updates the sprite pos to whatever pos vec is
+        self.rect.centerx, self.rect.centery = int(self.pos.x), int(self.pos.y)  # updates the sprite pos to whatever pos vec is
 
 
 class Portal(pg.sprite.Sprite):
@@ -132,7 +132,7 @@ class Alien(pg.sprite.Sprite):
         self.rect.x, self.rect.y = random.randint(0, ScreenW - AlienWidth), random.randint(0, ScreenH - AlienWidth)
         # self.rect.x, self.rect.y = 0, 0
         self.radius = AlienWidth/2
-        self.max_speed = 0.35
+        self.max_speed = 0.5
         self.pos = vec(self.rect.x, self.rect.y)
         self.vel = vec()
         self.prev_portal_coord, self.prev_barricade_coord = None, None  # used so pathing behaviour functions properly
@@ -182,7 +182,7 @@ class Alien(pg.sprite.Sprite):
         else:
             if self.path_progress != self.path_list_length:  # meaning alien hasn't finished following the path
                 next_path_coord = self.path[self.path_progress]
-                _Square(next_path_coord[0], next_path_coord[1], 'darkred')
+                _Square(next_path_coord[0], next_path_coord[1], 'purple')
                 next_coord = vec(next_path_coord[0], next_path_coord[1])
                 self.vel = next_coord - self.pos
                 if self.vel.length() <= self.max_speed * t:  # * t to make vel independent of frame rate
@@ -192,7 +192,7 @@ class Alien(pg.sprite.Sprite):
                     self.pos += self.vel
                 if self.pos == next_coord:
                     self.path_progress += 1
-                self.rect.x, self.rect.y = self.pos.x, self.pos.y
+                self.rect.x, self.rect.y = int(self.pos.x), int(self.pos.y)
             else:  # alien has finished following the path
                 self.path = []  # to start path finding again
 
@@ -201,10 +201,10 @@ class _Square(pg.sprite.Sprite):  # used to bug fix the path finder and showcase
     def __init__(self, x, y, colour):
         super().__init__()
         self.image = pg.Surface([AlienWidth, AlienWidth])
-        self.image.set_alpha(100)
+        self.image.set_alpha(50)
         self.image.fill(pg.Color(colour))
         self.rect = self.image.get_rect()
-        self.rect.x, self.rect.y = x, y
+        self.rect.x, self.rect.y = int(x), int(y)
         self._layer = 1
         self.health = 100  # used so they don't last too long on the screen. A buildup of sprites reduces FPS
         self.add(AllSprites)
@@ -245,7 +245,7 @@ def pathfinder(r, start_coord, sprite, end_group, is_aggro, obstacle_group):
                  (x + d, y)]
         # currently cycle is NW, SE, SW, NE, W, S, N & E. I believe this order to be most efficient
         for adj_coord in cycle:
-            sprite.rect.x, sprite.rect.y = adj_coord[0], adj_coord[1]
+            sprite.rect.x, sprite.rect.y = int(adj_coord[0]), int(adj_coord[1])
 
             if adj_coord[0] != coord[0] and adj_coord[1] != coord[1]:  # meaning adj_coord is in diagonal direction
                 distance = d * math.sqrt(2)  # distance to travel to the adj_coord
@@ -313,11 +313,12 @@ def pathfinder(r, start_coord, sprite, end_group, is_aggro, obstacle_group):
         sprite.no_end = False
     else:
         sprite.no_end = True
-    sprite.rect.x, sprite.rect.y = start_coord[0], start_coord[1]
+    sprite.rect.x, sprite.rect.y = int(start_coord[0]), int(start_coord[1])
     # It was changed for collisions detection between obstacle groups etc, now it needs to be reset back
-    # sprite.vel = vec(path[0], path[1]) - sprite.pos , this might have caused some of the of bugs
-    sprite.vel = vec(path[0][0], path[0][1]) - sprite.pos
-
+    if path:
+        sprite.vel = vec(path[0][0], path[0][1]) - sprite.pos
+    else:
+        sprite.vel = 0
 
 # When coding my game I didn't like having blocks of code I couldn't hide
 # so I did some research and learnt to create folds with Ctrl+Alt+T and use commands like Ctrl+Shift+Minus or Plus
@@ -365,11 +366,11 @@ while Running:
         MousePos = pg.mouse.get_pos()
         MouseState = pg.mouse.get_pressed()
         if MouseState[0]:  # creates barricades
-            Barricade(30, pg.Color('darkgreen'))
+            Barricade(30, pg.Color('white'))
         # endregion
         AllSprites.update(ms_per_frame)
         # region Draw
-        Screen.fill(pg.Color('turquoise'))
+        Screen.fill(pg.Color('black'))
         AllSprites.draw(Screen)
         pg.display.flip()
         # endregion
