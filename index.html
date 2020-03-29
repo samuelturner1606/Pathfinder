@@ -25,7 +25,6 @@
 
 			// spawn wall objects
 			const wallColour = "rgba(255, 255, 255)"; // white
-			context.fillStyle = wallColour;
 			const objectScalar = 0.03; // percentage of window
 			const minWindowLength = Math.min(
 				context.canvas.width,
@@ -34,6 +33,7 @@
 			const objectSize = Math.round(objectScalar * minWindowLength);
 			const numOfWalls = objectSize * 10;
 
+			context.fillStyle = wallColour;
 			for (let i = 0; i < numOfWalls; i++) {
 				let x = Math.random() * context.canvas.width;
 				let y = Math.random() * context.canvas.height;
@@ -61,22 +61,18 @@
 
 				for (const pos of positions) {
 					let pixel = context.getImageData(pos[0], pos[1], 1, 1);
-					let rgba =
-						"rgba(" +
+					let rgb =
+						"rgb(" +
 						pixel.data[0] +
 						", " +
 						pixel.data[1] +
 						", " +
 						pixel.data[2] +
 						")";
-					if (
-						// prevents objects (excluding walls) from spawning on each other
-						rgba == wallColour ||
-						rgba == startColour ||
-						rgba == endColour ||
-						rgba == portalColour
-					) {
-						return true;
+					if (rgb != "rgb(0, 0, 0)") {
+						// prevents objects from spawning on each other
+						// canvas background is black despite css
+						return rgb;
 					}
 				}
 			}
@@ -91,7 +87,7 @@
 					var y = Math.round(
 						Math.random() * (context.canvas.height - objectSize)
 					);
-				} while (collided(x, y) == true);
+				} while (collided(x, y) != undefined);
 				context.fillStyle = objectColour;
 				context.fillRect(x, y, objectSize, objectSize);
 				if (objectColour == startColour) {
@@ -105,12 +101,29 @@
 			for (let i = 0; i < 3; i++) {
 				spawnValidObject(endColour);
 			}
-
 			for (let i = 0; i < 5; i++) {
 				spawnValidObject(portalColour);
 			}
+
+			// create coord map that expands from start
+			function createCoordMap(coord) {
+				const x = coord[0];
+				const y = coord[1];
+				const d = objectSize;
+				let adjCoordArray = [
+					(x - d, y - d),
+					(x + d, y + d),
+					(x - d, y + d),
+					(x + d, y - d),
+					(x - d, y),
+					(x, y + d),
+					(x, y - d),
+					(x + d, y)
+				];
+			}
 			// (function loop() {
 			// 	window.requestAnimationFrame(loop);
+
 			// });();
 		</script>
 	</body>
