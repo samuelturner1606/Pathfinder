@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Pathfinder</title>
+		<style>
+			html,
+			body {
+				margin: 0;
+				padding: 0;
+				background-color: black;
+			}
+		</style>
+	</head>
+
+	<body>
+		<canvas></canvas>
+		<script>
+			const context = document.querySelector("canvas").getContext("2d");
+
+			// resize canvas
+			context.canvas.width = window.innerWidth;
+			context.canvas.height = window.innerHeight * 0.8;
+
+			// spawn wall objects
+			const wallColour = "rgba(255, 255, 255)"; // white
+			context.fillStyle = wallColour;
+			const objectScalar = 0.03; // percentage of window
+			const minWindowLength = Math.min(
+				context.canvas.width,
+				context.canvas.height
+			);
+			const objectSize = Math.round(objectScalar * minWindowLength);
+			const numOfWalls = objectSize * 10;
+
+			for (let i = 0; i < numOfWalls; i++) {
+				let x = Math.random() * context.canvas.width;
+				let y = Math.random() * context.canvas.height;
+				context.beginPath();
+				context.arc(x, y, objectSize, 0, Math.PI * 2, false);
+				context.fill();
+			}
+
+			// spawn other objects
+			const startColour = "rgba(0, 0, 255)"; // blue
+			const endColour = "rgba(255, 255, 0)"; // yellow
+			const portalColour = "rgba(0, 255, 0)"; // green
+
+			function collided(topLeftX, topLeftY) {
+				positions = [
+					[topLeftX, topLeftY],
+					[topLeftX + objectSize, topLeftY],
+					[topLeftX + objectSize, topLeftY + objectSize],
+					[topLeftX, topLeftY + objectSize],
+					[topLeftX + objectSize / 2, topLeftY],
+					[topLeftX + objectSize, topLeftY + objectSize / 2],
+					[topLeftX + objectSize / 2, topLeftY + objectSize],
+					[topLeftX, topLeftY + objectSize / 2]
+				];
+
+				for (const pos of positions) {
+					let pixel = context.getImageData(pos[0], pos[1], 1, 1);
+					let rgba =
+						"rgba(" +
+						pixel.data[0] +
+						", " +
+						pixel.data[1] +
+						", " +
+						pixel.data[2] +
+						")";
+					if (
+						// prevents objects (excluding walls) from spawning on each other
+						rgba == wallColour ||
+						rgba == startColour ||
+						rgba == endColour ||
+						rgba == portalColour
+					) {
+						return true;
+					}
+				}
+			}
+
+			function spawnValidObject(objectColour) {
+				do {
+					var x = Math.round(
+						Math.random() * (context.canvas.width - objectSize)
+					);
+					var y = Math.round(
+						Math.random() * (context.canvas.height - objectSize)
+					);
+				} while (collided(x, y) == true);
+				context.fillStyle = objectColour;
+				context.fillRect(x, y, objectSize, objectSize);
+			}
+
+			spawnValidObject(startColour);
+			for (let i = 0; i < 3; i++) {
+				spawnValidObject(endColour);
+			}
+
+			for (let i = 0; i < 5; i++) {
+				spawnValidObject(portalColour);
+			}
+
+			// (function loop() {
+			// 	window.requestAnimationFrame(loop);
+			// });();
+		</script>
+	</body>
+</html>
