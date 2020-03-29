@@ -81,6 +81,8 @@
 				}
 			}
 
+			const pathArray = [];
+			const portalArray = [];
 			function spawnValidObject(objectColour) {
 				do {
 					var x = Math.round(
@@ -92,6 +94,11 @@
 				} while (collided(x, y) == true);
 				context.fillStyle = objectColour;
 				context.fillRect(x, y, objectSize, objectSize);
+				if (objectColour == startColour) {
+					pathArray.push([x, y]);
+				} else if (objectColour == portalColour) {
+					portalArray.push([x, y]);
+				}
 			}
 
 			spawnValidObject(startColour);
@@ -102,7 +109,6 @@
 			for (let i = 0; i < 5; i++) {
 				spawnValidObject(portalColour);
 			}
-
 			// (function loop() {
 			// 	window.requestAnimationFrame(loop);
 			// });();
