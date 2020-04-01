@@ -17,148 +17,196 @@
 	<body>
 		<canvas></canvas>
 		<script>
-			const context = document.querySelector("canvas").getContext("2d");
+			(function() {
+				const context = document.querySelector("canvas").getContext("2d");
 
-			// resize canvas
-			context.canvas.width = window.innerWidth;
-			context.canvas.height = window.innerHeight * 0.8;
+				// resize canvas
+				context.canvas.width = window.innerWidth;
+				context.canvas.height = window.innerHeight * 0.8;
 
-			// spawn wall objects
-			const wallColour = "rgb(255, 255, 255)"; // white
-			const objectScalar = 0.03; // percentage of window
-			const minWindowLength = Math.min(
-				context.canvas.width,
-				context.canvas.height
-			);
-			const objectSize = Math.round(objectScalar * minWindowLength);
-			const numOfWalls = objectSize * 10;
-			context.fillStyle = wallColour;
+				// spawn wall objects
+				const wallColour = "rgb(255,255,255)"; // white
+				const minWindowLength = Math.min(
+					context.canvas.width,
+					context.canvas.height
+				);
+				const objectSize = Math.round(0.03 * minWindowLength); // percentage of window
+				const numOfWalls = objectSize * 10;
+				context.fillStyle = wallColour;
 
-			for (let i = 0; i < numOfWalls; i++) {
-				let x = Math.random() * context.canvas.width;
-				let y = Math.random() * context.canvas.height;
-				context.beginPath();
-				context.arc(x, y, objectSize, 0, Math.PI * 2, false);
-				context.fill();
-			}
-
-			// spawn other objects
-			function collided(topLeftX, topLeftY) {
-				let d = objectSize - 1;
-				positions = [
-					[topLeftX + d / 2, topLeftY + d / 2], // middle
-					[topLeftX, topLeftY], // top left
-					[topLeftX + d, topLeftY], // top right
-					[topLeftX + d, topLeftY + d], // bottom right
-					[topLeftX, topLeftY + d], // bottom left
-					[topLeftX + d / 2, topLeftY], // top middle
-					[topLeftX + d, topLeftY + d / 2], // right middle
-					[topLeftX + d / 2, topLeftY + d], // bottom middle
-					[topLeftX, topLeftY + d / 2] // left middle
-				];
-
-				for (const pos of positions) {
-					let pixel = context.getImageData(
-						Math.round(pos[0]),
-						Math.round(pos[1]),
-						1,
-						1
-					);
-					let rgb =
-						"rgb(" +
-						pixel.data[0] +
-						", " +
-						pixel.data[1] +
-						", " +
-						pixel.data[2] +
-						")";
-					if (rgb != "rgb(0, 0, 0)") {
-						// if rgb isn't canvas background
-						return rgb;
-					}
-				}
-			}
-
-			const startColour = "rgb(0, 0, 255)"; // blue
-			const endColour = "rgb(255, 255, 0)"; // yellow
-			const portalColour = "rgb(0, 255, 0)"; // green
-			const coordArray = [];
-			const portalArray = [];
-
-			function spawnValidObject(objectColour) {
-				do {
-					var spawnX = Math.round(
+				function randomCoord() {
+					const x = Math.round(
 						Math.random() * (context.canvas.width - objectSize)
 					);
-					var spawnY = Math.round(
+					const y = Math.round(
 						Math.random() * (context.canvas.height - objectSize)
 					);
-				} while (collided(spawnX, spawnY) != undefined); // find new spawn if objects occupy previous spawn
-				context.fillStyle = objectColour;
-				context.fillRect(spawnX, spawnY, objectSize, objectSize);
-				if (objectColour == startColour) {
-					coordArray.push([spawnX, spawnY]);
-				} else if (objectColour == portalColour) {
-					portalArray.push([spawnX, spawnY]);
+					return [x, y];
 				}
-			}
 
-			spawnValidObject(startColour);
-			for (let i = 0; i < 3; i++) {
-				spawnValidObject(endColour);
-			}
-			for (let i = 0; i < 5; i++) {
-				spawnValidObject(portalColour);
-			}
+				for (let i = 0; i < numOfWalls; i++) {
+					let spawn = randomCoord();
+					context.beginPath();
+					context.arc(spawn[0], spawn[1], objectSize, 0, Math.PI * 2, false);
+					context.fill();
+				}
 
-			// create coord map that expands from start
-			coordColour = "rgb(0, 255, 255)";
+				// spawn other objects
+				const startColour = "rgb(0,0,255)"; // blue
+				const endColour = "rgb(255,255,0)"; // yellow
+				const portalColour = "rgb(0,255,0)"; // green
+				const coordArray = [];
+				const portalArray = [];
 
-			function createCoordMap(coord) {
-				const x = coord[0];
-				const y = coord[1];
-				const d = objectSize;
-				let adjCoordArray = [
-					[x - d, y - d], // NW
-					[x + d, y + d], // SE
-					[x - d, y + d], // SW
-					[x + d, y - d], // NE
-					[x - d, y], // W
-					[x, y + d], // S
-					[x, y - d], // N
-					[x + d, y] // E
-				];
-				for (const adjCoord of adjCoordArray) {
-					if (
-						// if adjCoord is within canvas
-						0 < adjCoord[0] &&
-						adjCoord[0] < context.canvas.width - objectSize &&
-						0 < adjCoord[1] &&
-						adjCoord[1] < context.canvas.height - objectSize
-					) {
-						if (collided(adjCoord[0], adjCoord[1]) == undefined) {
-							context.fillRect(
-								adjCoord[0],
-								adjCoord[1],
-								objectSize,
-								objectSize
-							);
-							coordArray.push(adjCoord);
+				function collision(topLeftX, topLeftY) {
+					const d = objectSize - 1; // -1 prevents bugs
+					const positions = [
+						[topLeftX + d / 2, topLeftY + d / 2], // middle
+						[topLeftX, topLeftY], // top left
+						[topLeftX + d, topLeftY], // top right
+						[topLeftX + d, topLeftY + d], // bottom right
+						[topLeftX, topLeftY + d], // bottom left
+						[topLeftX + d / 2, topLeftY], // top middle
+						[topLeftX + d, topLeftY + d / 2], // right middle
+						[topLeftX + d / 2, topLeftY + d], // bottom middle
+						[topLeftX, topLeftY + d / 2] // left middle
+					];
+
+					for (const pos of positions) {
+						const pixel = context.getImageData(
+							Math.round(pos[0]),
+							Math.round(pos[1]),
+							1,
+							1
+						);
+						const rgb =
+							"rgb(" +
+							pixel.data[0] +
+							"," +
+							pixel.data[1] +
+							"," +
+							pixel.data[2] +
+							")";
+						if (rgb != "rgb(0,0,0)") {
+							// if rgb isn't canvas background
+							return rgb;
 						}
 					}
 				}
-			}
 
-			context.fillStyle = coordColour;
-			coordIndex = 0;
-			(function loop() {
-				if (coordArray[coordIndex] != undefined) {
-					window.requestAnimationFrame(loop);
-					createCoordMap(coordArray[coordIndex]);
-					coordIndex++;
-				} else {
-					console.log("end");
+				function drawSquare(colour, x, y) {
+					context.fillStyle = colour;
+					context.fillRect(x, y, objectSize, objectSize);
 				}
+
+				function spawnValidObject(objectColour) {
+					//  sets new spawn until no object collision
+					let spawn = randomCoord();
+					while (collision(spawn[0], spawn[1]) != undefined) {
+						spawn = randomCoord();
+					}
+					drawSquare(objectColour, spawn[0], spawn[1]);
+					if (objectColour == startColour) {
+						coordArray.push([spawn[0], spawn[1]]);
+					} else if (objectColour == portalColour) {
+						portalArray.push([spawn[0], spawn[1]]);
+					}
+				}
+
+				spawnValidObject(startColour);
+				for (let i = 0; i < 3; i++) {
+					spawnValidObject(endColour);
+				}
+				for (let i = 0; i < 5; i++) {
+					spawnValidObject(portalColour);
+				}
+
+				// create coord map that expands from start
+				const linearDAlpha = 0.05; // change in pixel alpha
+				const diagonalDAlpha = Math.hypot(linearDAlpha, linearDAlpha);
+				const coordColour = "rgb(0,255,255)"; // cyan
+
+				function pixelAlpha(coordX, coordY) {
+					const pixel = context.getImageData(coordX, coordY, 1, 1);
+					const alpha = pixel.data[3] / 255;
+					return alpha;
+				}
+
+				function drawNewCoord(dAlpha, alpha, adjCoord) {
+					alpha -= dAlpha;
+					if (alpha > 0) {
+						coordArray.push(adjCoord); // this continues endFinderLoop()
+						drawSquare(
+							"rgba" + coordColour.slice(3, -1) + "," + alpha + ")",
+							adjCoord[0],
+							adjCoord[1]
+						);
+					}
+				}
+
+				function updateOldCoord(dAlpha, alpha, adjCoord) {
+					alpha -= dAlpha;
+					const oldAlpha = pixelAlpha(adjCoord[0], adjCoord[1]);
+					if (alpha > oldAlpha) {
+						// if brighter than oldAlpha, shortcut found
+						context.clearRect(adjCoord[0], adjCoord[1], objectSize, objectSize); // clears old square so alpha can be updated
+						drawSquare(
+							"rgba" + coordColour.slice(3, -1) + "," + alpha + ")",
+							adjCoord[0],
+							adjCoord[1]
+						);
+					}
+				}
+
+				function createCoordMap(coordX, coordY) {
+					const currentAlpha = pixelAlpha(coordX, coordY);
+					const adjCoordArray = [
+						[coordX - objectSize, coordY - objectSize], // NW
+						[coordX + objectSize, coordY + objectSize], // SE
+						[coordX - objectSize, coordY + objectSize], // SW
+						[coordX + objectSize, coordY - objectSize], // NE
+						[coordX - objectSize, coordY], // W
+						[coordX, coordY + objectSize], // S
+						[coordX, coordY - objectSize], // N
+						[coordX + objectSize, coordY] // E
+					];
+					for (const adjCoord of adjCoordArray) {
+						if (
+							// if adjCoord is on canvas
+							0 < adjCoord[0] &&
+							adjCoord[0] < context.canvas.width - objectSize &&
+							0 < adjCoord[1] &&
+							adjCoord[1] < context.canvas.height - objectSize
+						) {
+							const adjColour = collision(adjCoord[0], adjCoord[1]);
+							if (adjColour == undefined) {
+								if (adjCoord[0] != coordX && adjCoord[1] != coordY) {
+									drawNewCoord(diagonalDAlpha, currentAlpha, adjCoord);
+								} else {
+									drawNewCoord(linearDAlpha, currentAlpha, adjCoord);
+								}
+							} else if (adjColour == coordColour) {
+								// if returning to existing coord
+								if (adjCoord[0] != coordX && adjCoord[1] != coordY) {
+									updateOldCoord(diagonalDAlpha, currentAlpha, adjCoord);
+								} else {
+									updateOldCoord(linearDAlpha, currentAlpha, adjCoord);
+								}
+							}
+						}
+					}
+				}
+
+				let coordIndex = 0;
+				(function endFinderLoop() {
+					const coord = coordArray[coordIndex];
+					if (coord != undefined) {
+						// if every coord in array hasn't been checked
+						window.requestAnimationFrame(endFinderLoop);
+						createCoordMap(coord[0], coord[1]);
+						coordIndex++;
+					}
+				})();
 			})();
 		</script>
 	</body>
