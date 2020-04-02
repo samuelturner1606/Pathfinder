@@ -107,9 +107,9 @@
 					}
 					drawSquare(objectColour, spawn[0], spawn[1]);
 					if (objectColour == startColour) {
-						coordArray.push([spawn[0], spawn[1]]);
+						coordArray.push(spawn);
 					} else if (objectColour == portalColour) {
-						portalArray.push([spawn[0], spawn[1]]);
+						portalArray.push(spawn);
 					}
 				}
 
@@ -125,6 +125,7 @@
 				const linearDAlpha = 0.05; // change in pixel alpha
 				const diagonalDAlpha = Math.hypot(linearDAlpha, linearDAlpha);
 				const coordColour = "rgb(0,255,255)"; // cyan
+				const pathArray = [];
 
 				function pixelAlpha(coordX, coordY) {
 					const pixel = context.getImageData(coordX, coordY, 1, 1);
@@ -192,6 +193,8 @@
 								} else {
 									updateOldCoord(linearDAlpha, currentAlpha, adjCoord);
 								}
+							} else if (adjColour == endColour) {
+								pathArray.push(adjCoord);
 							}
 						}
 					}
@@ -204,7 +207,9 @@
 						// if every coord in array hasn't been checked
 						window.requestAnimationFrame(endFinderLoop);
 						createCoordMap(coord[0], coord[1]);
-						coordIndex++;
+						if (pathArray.length == 0) {
+							coordIndex++;
+						}
 					}
 				})();
 			})();
