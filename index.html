@@ -17,7 +17,7 @@
 	<body>
 		<canvas></canvas>
 		<script>
-			(function() {
+			(function pathfinderAppLoop() {
 				const context = document.querySelector("canvas").getContext("2d");
 
 				// resize canvas
@@ -203,13 +203,13 @@
 				let coordIndex = 0;
 				(function endFinderLoop() {
 					const coord = coordArray[coordIndex];
-					if (coord != undefined) {
-						// if every coord in array hasn't been checked
+					if (coord != undefined && pathArray.length == 0) {
+						// if every coord in array hasn't been checked and end hasn't been found
 						window.requestAnimationFrame(endFinderLoop);
 						createCoordMap(coord[0], coord[1]);
-						if (pathArray.length == 0) {
-							coordIndex++;
-						}
+						coordIndex++;
+					} else {
+						window.requestAnimationFrame(pathfinderAppLoop);
 					}
 				})();
 			})();
