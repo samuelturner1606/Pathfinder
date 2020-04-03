@@ -17,46 +17,137 @@
 	<body>
 		<canvas></canvas>
 		<script>
-			(function pathfinderAppLoop() {
-				const context = document.querySelector("canvas").getContext("2d");
+			(function pathfinderApp() {
+				/* Structure:
+				1) Local Variables
+				2) Initialisation
+				3) Animation
+				4) Function Declarations */
 
-				// resize canvas
+				// Local Variables //
+
+				// Canvas resizing
+				const context = document.querySelector("canvas").getContext("2d");
 				context.canvas.width = window.innerWidth;
 				context.canvas.height = window.innerHeight * 0.8;
-
-				// spawn wall objects
-				const wallColour = "rgb(255,255,255)"; // white
-				const numOfWalls = 100;
-				const wallDensity = 0.05;
 				const canvasWidth = context.canvas.width;
 				const canvasHeight = context.canvas.height;
-				const objectSize = Math.round(
+
+				// Object colours
+				const wallColour = "rgb(255,255,255)"; // white
+				const startColour = "rgb(0,255,255)"; // cyan
+				const endColour = "rgb(0,255,0)"; // green
+				const portalColour = "rgb(255,0,255)"; // magenta
+				const coordColour = "rgb(0,0,255)"; // blue
+				const pathColour = "rgb(0,255,255)"; // cyan
+
+				// Objects
+				const numOfWalls = 100;
+				const numOfEndObjects = 3;
+				const numOfPortalObjects = 5;
+				const wallDensity = 0.05;
+				const objectWidth = Math.round(
 					Math.sqrt((wallDensity * canvasWidth * canvasHeight) / numOfWalls)
-				); // pixels
+				);
+
+				// Indexes
+				let coordIndex = 0;
+				let pathIndex = 0;
+
+				// Arrays
+				const coordArray = [];
+				const portalArray = [];
+				const pathArray = [];
+
+				// Pixel delta alpha
+				const linearDAlpha = 0.05;
+				const diagonalDAlpha = Math.hypot(linearDAlpha, linearDAlpha);
+				const dimmestAlpha = 0.05;
+
+				// Initialisation //
+
+				// Spawn wall objects
 				context.fillStyle = wallColour;
-
-				function randomCoord() {
-					const x = Math.round(Math.random() * (canvasWidth - objectSize));
-					const y = Math.round(Math.random() * (canvasHeight - objectSize));
-					return [x, y];
-				}
-
 				for (let i = 0; i < numOfWalls; i++) {
 					let spawn = randomCoord();
 					context.beginPath();
-					context.arc(spawn[0], spawn[1], objectSize, 0, Math.PI * 2, false);
+					context.arc(spawn[0], spawn[1], objectWidth, 0, Math.PI * 2, false);
 					context.fill();
 				}
 
-				// spawn other objects
-				const startColour = "rgb(0,0,255)"; // blue
-				const endColour = "rgb(255,255,0)"; // yellow
-				const portalColour = "rgb(0,255,0)"; // green
-				const coordArray = [];
-				const portalArray = [];
+				// Spawn start, end and portal objects
+				spawnValidObject(startColour);
+				for (let i = 0; i < numOfEndObjects; i++) {
+					spawnValidObject(endColour);
+				}
+				for (let i = 0; i < numOfPortalObjects; i++) {
+					spawnValidObject(portalColour);
+				}
+
+				// Animation //
+
+				(function appLoop() {
+					if (pathArray.length == 0) {
+						const coord = coordArray[coordIndex];
+						if (coord != undefined) {
+							window.requestAnimationFrame(appLoop);
+							updateFinder(coord[0], coord[1]);
+							coordIndex++;
+						} else {
+							window.requestAnimationFrame(pathfinderApp);
+						}
+					} else {
+						const path = pathArray[pathIndex];
+						if (path != undefined) {
+							window.requestAnimationFrame(appLoop);
+							updatePathing(path[0], path[1]);
+							pathIndex++;
+						} else {
+							window.requestAnimationFrame(pathfinderApp);
+						}
+					}
+				})();
+
+				// Function Declarations //
+
+				/* Chronological order of first execution:
+
+				Initialisation
+				1) randomCoord() 
+				2) spawnValidObject()
+				3) collision()
+				4) getRgb()
+
+				Animation
+				6) updateFinder()
+				7) getAlpha()
+				8) adjCoords()
+				9) drawRgbaSquare()
+				10) updatePathing()
+				*/
+
+				function randomCoord() {
+					const x = Math.round(Math.random() * (canvasWidth - objectWidth));
+					const y = Math.round(Math.random() * (canvasHeight - objectWidth));
+					return [x, y];
+				}
+
+				function spawnValidObject(objectColour) {
+					let spawn = randomCoord();
+					while (collision(spawn[0], spawn[1]) != undefined) {
+						spawn = randomCoord();
+					}
+					context.fillStyle = objectColour;
+					context.fillRect(spawn[0], spawn[1], objectWidth, objectWidth);
+					if (objectColour == startColour) {
+						coordArray.push(spawn);
+					} else if (objectColour == portalColour) {
+						portalArray.push(spawn);
+					}
+				}
 
 				function collision(topLeftX, topLeftY) {
-					const d = objectSize - 1; // -1 prevents bugs
+					const d = objectWidth - 1; // -1 prevents bugs
 					const positions = [
 						[topLeftX + d / 2, topLeftY + d / 2], // middle
 						[topLeftX, topLeftY], // top left
@@ -70,145 +161,135 @@
 					];
 
 					for (const pos of positions) {
-						const pixel = context.getImageData(
-							Math.round(pos[0]),
-							Math.round(pos[1]),
-							1,
-							1
-						);
-						const rgb =
-							"rgb(" +
-							pixel.data[0] +
-							"," +
-							pixel.data[1] +
-							"," +
-							pixel.data[2] +
-							")";
+						const rgb = getRgb(Math.round(pos[0]), Math.round(pos[1]));
 						if (rgb != "rgb(0,0,0)") {
-							// if rgb isn't canvas background
+							// canvas background is always black despite any css
 							return rgb;
 						}
 					}
 				}
 
-				function drawSquare(colour, x, y) {
-					context.fillStyle = colour;
-					context.fillRect(x, y, objectSize, objectSize);
+				function getRgb(x, y) {
+					const pixel = context.getImageData(x, y, 1, 1);
+					const rgb =
+						"rgb(" +
+						pixel.data[0] +
+						"," +
+						pixel.data[1] +
+						"," +
+						pixel.data[2] +
+						")";
+					return rgb;
 				}
 
-				function spawnValidObject(objectColour) {
-					//  sets new spawn until no object collision
-					let spawn = randomCoord();
-					while (collision(spawn[0], spawn[1]) != undefined) {
-						spawn = randomCoord();
-					}
-					drawSquare(objectColour, spawn[0], spawn[1]);
-					if (objectColour == startColour) {
-						coordArray.push(spawn);
-					} else if (objectColour == portalColour) {
-						portalArray.push(spawn);
-					}
-				}
-
-				spawnValidObject(startColour);
-				for (let i = 0; i < 3; i++) {
-					spawnValidObject(endColour);
-				}
-				for (let i = 0; i < 5; i++) {
-					spawnValidObject(portalColour);
-				}
-
-				// create coord map that expands from start
-				const linearDAlpha = 0.05; // change in pixel alpha
-				const diagonalDAlpha = Math.hypot(linearDAlpha, linearDAlpha);
-				const coordColour = "rgb(0,255,255)"; // cyan
-				const pathArray = [];
-
-				function pixelAlpha(coordX, coordY) {
-					const pixel = context.getImageData(coordX, coordY, 1, 1);
-					const alpha = pixel.data[3] / 255;
-					return alpha;
-				}
-
-				function drawNewCoord(dAlpha, alpha, adjCoord) {
-					alpha -= dAlpha;
-					if (alpha > 0) {
-						coordArray.push(adjCoord); // this continues endFinderLoop()
-						drawSquare(
-							"rgba" + coordColour.slice(3, -1) + "," + alpha + ")",
-							adjCoord[0],
-							adjCoord[1]
-						);
-					}
-				}
-
-				function updateOldCoord(dAlpha, alpha, adjCoord) {
-					alpha -= dAlpha;
-					const oldAlpha = pixelAlpha(adjCoord[0], adjCoord[1]);
-					if (alpha > oldAlpha) {
-						// if brighter than oldAlpha, shortcut found
-						context.clearRect(adjCoord[0], adjCoord[1], objectSize, objectSize); // clears old square so alpha can be updated
-						drawSquare(
-							"rgba" + coordColour.slice(3, -1) + "," + alpha + ")",
-							adjCoord[0],
-							adjCoord[1]
-						);
-					}
-				}
-
-				function createCoordMap(coordX, coordY) {
-					const currentAlpha = pixelAlpha(coordX, coordY);
-					const adjCoordArray = [
-						[coordX - objectSize, coordY - objectSize], // NW
-						[coordX + objectSize, coordY + objectSize], // SE
-						[coordX - objectSize, coordY + objectSize], // SW
-						[coordX + objectSize, coordY - objectSize], // NE
-						[coordX - objectSize, coordY], // W
-						[coordX, coordY + objectSize], // S
-						[coordX, coordY - objectSize], // N
-						[coordX + objectSize, coordY] // E
-					];
+				function updateFinder(coordX, coordY) {
+					let currentAlpha = getAlpha(coordX, coordY);
+					const adjCoordArray = adjCoords(coordX, coordY);
 					for (const adjCoord of adjCoordArray) {
 						if (
-							// if adjCoord is on canvas
 							0 < adjCoord[0] &&
-							adjCoord[0] < canvasWidth - objectSize &&
+							adjCoord[0] < canvasWidth - objectWidth &&
 							0 < adjCoord[1] &&
-							adjCoord[1] < canvasHeight - objectSize
+							adjCoord[1] < canvasHeight - objectWidth
 						) {
+							if (adjCoord[0] != coordX && adjCoord[1] != coordY) {
+								var adjAlpha = currentAlpha - diagonalDAlpha;
+							} else {
+								var adjAlpha = currentAlpha - linearDAlpha;
+							}
 							const adjColour = collision(adjCoord[0], adjCoord[1]);
-							if (adjColour == undefined) {
-								if (adjCoord[0] != coordX && adjCoord[1] != coordY) {
-									drawNewCoord(diagonalDAlpha, currentAlpha, adjCoord);
-								} else {
-									drawNewCoord(linearDAlpha, currentAlpha, adjCoord);
-								}
-							} else if (adjColour == coordColour) {
-								// if returning to existing coord
-								if (adjCoord[0] != coordX && adjCoord[1] != coordY) {
-									updateOldCoord(diagonalDAlpha, currentAlpha, adjCoord);
-								} else {
-									updateOldCoord(linearDAlpha, currentAlpha, adjCoord);
-								}
+							if (adjColour == undefined && adjAlpha > dimmestAlpha) {
+								coordArray.push(adjCoord);
+								drawRgbaSquare(coordColour, adjCoord[0], adjCoord[1], adjAlpha);
+							} else if (
+								adjColour == coordColour &&
+								adjAlpha > getAlpha(adjCoord[0], adjCoord[1])
+							) {
+								context.clearRect(
+									adjCoord[0],
+									adjCoord[1],
+									objectWidth,
+									objectWidth
+								);
+								drawRgbaSquare(coordColour, adjCoord[0], adjCoord[1], adjAlpha);
 							} else if (adjColour == endColour) {
 								pathArray.push(adjCoord);
+								drawRgbaSquare(pathColour, adjCoord[0], adjCoord[1], adjAlpha);
+								return;
 							}
 						}
 					}
 				}
 
-				let coordIndex = 0;
-				(function endFinderLoop() {
-					const coord = coordArray[coordIndex];
-					if (coord != undefined && pathArray.length == 0) {
-						// if every coord in array hasn't been checked and end hasn't been found
-						window.requestAnimationFrame(endFinderLoop);
-						createCoordMap(coord[0], coord[1]);
-						coordIndex++;
+				function getAlpha(coordX, coordY) {
+					const pixel = context.getImageData(coordX, coordY, 1, 1);
+					const alpha = pixel.data[3] / 255;
+					return alpha;
+				}
+
+				function adjCoords(coordX, coordY) {
+					const adjCoordArray = [
+						[coordX - objectWidth, coordY - objectWidth], // NW
+						[coordX + objectWidth, coordY + objectWidth], // SE
+						[coordX - objectWidth, coordY + objectWidth], // SW
+						[coordX + objectWidth, coordY - objectWidth], // NE
+						[coordX - objectWidth, coordY], // W
+						[coordX, coordY + objectWidth], // S
+						[coordX, coordY - objectWidth], // N
+						[coordX + objectWidth, coordY] // E
+					];
+					return adjCoordArray;
+				}
+
+				function drawRgbaSquare(colour, x, y, alpha) {
+					context.fillStyle = "rgba" + colour.slice(3, -1) + "," + alpha + ")";
+					context.fillRect(x, y, objectWidth, objectWidth);
+				}
+
+				function updatePathing(pathX, pathY) {
+					if (pathArray.length == 1) {
+						var pathAlpha = 0;
 					} else {
-						window.requestAnimationFrame(pathfinderAppLoop);
+						var pathAlpha = getAlpha(pathX, pathY);
 					}
-				})();
+					const adjCoordArray = adjCoords(pathX, pathY);
+					let brightestCoord = [];
+					for (const adjCoord of adjCoordArray) {
+						if (
+							0 < adjCoord[0] &&
+							adjCoord[0] < canvasWidth - objectWidth &&
+							0 < adjCoord[1] &&
+							adjCoord[1] < canvasHeight - objectWidth
+						) {
+							const adjRgb = getRgb(adjCoord[0], adjCoord[1]);
+							if (adjRgb == coordColour) {
+								const adjAlpha = getAlpha(adjCoord[0], adjCoord[1]);
+								if (adjAlpha > pathAlpha && adjAlpha < 1) {
+									if (brightestCoord.length == 0) {
+										brightestCoord.push(adjAlpha, adjCoord);
+									} else if (adjAlpha > brightestCoord[0]) {
+										brightestCoord = [adjAlpha, adjCoord];
+									}
+								}
+							}
+						}
+					}
+					if (brightestCoord.length != 0) {
+						pathArray.push(brightestCoord[1]);
+						context.clearRect(
+							brightestCoord[1][0],
+							brightestCoord[1][1],
+							objectWidth,
+							objectWidth
+						);
+						drawRgbaSquare(
+							pathColour,
+							brightestCoord[1][0],
+							brightestCoord[1][1],
+							brightestCoord[0]
+						);
+					}
+				}
 			})();
 		</script>
 	</body>
