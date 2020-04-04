@@ -37,15 +37,13 @@
 				const wallColour = "rgb(255,255,255)"; // white
 				const startColour = "rgb(0,255,255)"; // cyan
 				const endColour = "rgb(0,255,0)"; // green
-				const portalColour = "rgb(255,0,255)"; // magenta
 				const coordColour = "rgb(0,0,255)"; // blue
 				const pathColour = "rgb(0,255,255)"; // cyan
 
 				// Objects
 				const numOfWalls = 100;
 				const numOfEndObjects = 3;
-				const numOfPortalObjects = 5;
-				const wallDensity = 0.05;
+				const wallDensity = 0.06;
 				const objectWidth = Math.round(
 					Math.sqrt((wallDensity * canvasWidth * canvasHeight) / numOfWalls)
 				);
@@ -56,13 +54,12 @@
 
 				// Arrays
 				const coordArray = [];
-				const portalArray = [];
 				const pathArray = [];
 
 				// Pixel delta alpha
 				const linearDAlpha = 0.05;
 				const diagonalDAlpha = Math.hypot(linearDAlpha, linearDAlpha);
-				const dimmestAlpha = 0.05;
+				const dimmestAlpha = 0.15;
 
 				// Initialisation //
 
@@ -75,32 +72,30 @@
 					context.fill();
 				}
 
-				// Spawn start, end and portal objects
+				// Spawn start and end objects
 				spawnValidObject(startColour);
 				for (let i = 0; i < numOfEndObjects; i++) {
 					spawnValidObject(endColour);
 				}
-				for (let i = 0; i < numOfPortalObjects; i++) {
-					spawnValidObject(portalColour);
-				}
 
 				// Animation //
-
+				debugger;
 				(function appLoop() {
 					if (pathArray.length == 0) {
-						const coord = coordArray[coordIndex];
-						if (coord != undefined) {
+						// if end unfound
+						if (coordIndex < coordArray.length) {
 							window.requestAnimationFrame(appLoop);
+							const coord = coordArray[coordIndex];
 							updateFinder(coord[0], coord[1]);
 							coordIndex++;
 						} else {
 							window.requestAnimationFrame(pathfinderApp);
 						}
 					} else {
-						const path = pathArray[pathIndex];
-						if (path != undefined) {
+						if (pathIndex < pathArray.length) {
 							window.requestAnimationFrame(appLoop);
-							updatePathing(path[0], path[1]);
+							const pathCoord = pathArray[pathIndex];
+							updatePathing(pathCoord[0], pathCoord[1]);
 							pathIndex++;
 						} else {
 							window.requestAnimationFrame(pathfinderApp);
@@ -113,7 +108,7 @@
 				/* Chronological order of first execution:
 
 				Initialisation
-				1) randomCoord() 
+				1) randomCoord()
 				2) spawnValidObject()
 				3) collision()
 				4) getRgb()
@@ -141,8 +136,6 @@
 					context.fillRect(spawn[0], spawn[1], objectWidth, objectWidth);
 					if (objectColour == startColour) {
 						coordArray.push(spawn);
-					} else if (objectColour == portalColour) {
-						portalArray.push(spawn);
 					}
 				}
 
@@ -183,7 +176,7 @@
 				}
 
 				function updateFinder(coordX, coordY) {
-					let currentAlpha = getAlpha(coordX, coordY);
+					const currentAlpha = getAlpha(coordX, coordY);
 					const adjCoordArray = adjCoords(coordX, coordY);
 					for (const adjCoord of adjCoordArray) {
 						if (
@@ -262,8 +255,8 @@
 							adjCoord[1] < canvasHeight - objectWidth
 						) {
 							const adjRgb = getRgb(adjCoord[0], adjCoord[1]);
+							const adjAlpha = getAlpha(adjCoord[0], adjCoord[1]);
 							if (adjRgb == coordColour) {
-								const adjAlpha = getAlpha(adjCoord[0], adjCoord[1]);
 								if (adjAlpha > pathAlpha && adjAlpha < 1) {
 									if (brightestCoord.length == 0) {
 										brightestCoord.push(adjAlpha, adjCoord);
@@ -271,6 +264,8 @@
 										brightestCoord = [adjAlpha, adjCoord];
 									}
 								}
+							} else if (adjRgb == startColour && adjAlpha == 1) {
+								return;
 							}
 						}
 					}
